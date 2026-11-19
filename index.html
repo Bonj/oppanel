@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="back" content="__BACK_URL__">
+<title>PBX operator panel</title>
+<style>
+:root{--bg:#e8ebee;--panel:#fff;--ink:#1b2530;--mut:#5d6b78;--line:#cdd4da;--idle:#2e8b57;--busy:#c0392b;--ring:#d98a00;--off:#8d98a3;--hold:#2f6fb0;color-scheme:light}
+:root[data-theme=dark]{--bg:#12171c;--panel:#1b232b;--ink:#e3e8ec;--mut:#93a1ad;--line:#2f3b46;color-scheme:dark}
+#theme{margin-left:auto}
+#back{border:1px solid var(--line);border-radius:4px;padding:5px 9px;background:var(--panel);color:var(--ink);text-decoration:none}
+.roomhd{display:flex;gap:6px;align-items:baseline;width:100%;border:0;background:none;padding:2px 0;text-align:left}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,sans-serif}
+input,button{font:inherit;padding:5px 9px;border:1px solid var(--line);border-radius:4px;background:var(--panel);color:var(--ink)}
+button{cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid var(--hold);outline-offset:1px}
+.b{padding:2px 7px}
+header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 12px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}
+main{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:12px;padding:12px;align-items:start}
+@media(max-width:900px){main{grid-template-columns:1fr}}
+section{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px;margin-bottom:12px}
+h2{font-size:15px;margin:0 0 8px;display:flex;gap:8px;align-items:center;justify-content:space-between}
+p{margin:0 0 8px}
+#exts,#qtiles,#rtiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px}
+.ext{display:grid;gap:1px;text-align:left;border-left:6px solid var(--off);min-height:54px;padding:5px 8px}
+.fold{min-width:32px;min-height:28px;padding:0 8px}.hr{display:flex;gap:6px;align-items:center}
+.ext{min-width:0;overflow:hidden}.ext b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ext span,.ext small{color:var(--mut);font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mem,#sc{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.chip{border:1px solid var(--line);border-left:5px solid var(--off);border-radius:3px;padding:1px 6px;font-size:12px}
+.s-NOTINUSE{border-left-color:var(--idle)}.s-INUSE,.s-BUSY{border-left-color:var(--busy)}
+.s-RINGING,.s-RINGINUSE{border-left-color:var(--ring)}.s-ONHOLD{border-left-color:var(--hold)}
+.call,.room,.lot{border:1px solid var(--line);border-radius:4px;padding:6px 8px;margin-bottom:8px}
+.row{display:flex;gap:6px;align-items:center;padding:2px 0}
+.row>span:first-child{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.t{font-variant-numeric:tabular-nums;color:var(--mut)}.danger{color:var(--busy)}
+#login{position:fixed;inset:0;background:var(--bg);display:grid;place-items:center;z-index:5}
+#lf{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:20px;display:grid;gap:10px;width:min(320px,90vw)}
+#toast{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);padding:8px 14px;border-radius:4px;background:var(--ink);color:var(--bg);display:none;z-index:6}
+</style></head><body>
+<div id="login"><form id="lf"><b>Operator panel</b>
+<input id="u" placeholder="Username" autocomplete="username" required>
+<input id="p" type="password" placeholder="Password" autocomplete="current-password" required>
+<input id="x" placeholder="Your extension" inputmode="numeric" required>
+<button>Sign in</button><div id="lerr" class="danger" role="alert"></div></form></div>
+<header><a id="back" target="_top" rel="noopener" hidden>Back to dashboard</a><b id="me"></b><span id="conn" class="t"></span>
+<input id="from" size="6" aria-label="Call from extension" placeholder="From">
+<input id="to" size="12" aria-label="Number to call" placeholder="Call to">
+<button id="call">Call</button>
+<input id="q" placeholder="Filter extensions" aria-label="Filter extensions"><button id="theme" type="button" data-a="theme"></button></header>
+<main><div><section><h2><span>Extensions <span class="t" id="ecount"></span></span><button class="fold" type="button" data-a="fold" data-k="exts">&#9652;</button></h2><div id="exts"></div></section>
+<section><h2>Queues <button class="fold" type="button" data-a="fold" data-k="queues">&#9652;</button></h2><div id="qtiles"></div></section>
+<section><h2>Ring groups <button class="fold" type="button" data-a="fold" data-k="rgs">&#9652;</button></h2><div id="rtiles"></div></section></div>
+<div><section><h2>Calls <span class="hr"><input id="xto" size="10" placeholder="Transfer to" aria-label="Transfer destination"><button class="fold" type="button" data-a="fold" data-k="calls">&#9652;</button></span></h2>
+<p class="t" id="chint">Blind and Attended send that party to the Transfer to number. For Attended, the other party dials first and completes by hanging up. Send moves a caller that is ringing or waiting (not yet bridged).</p>
+<div id="sc"></div>
+<div id="calls"></div></section>
+<section><h2>IVRs <button class="fold" type="button" data-a="fold" data-k="ivrs">&#9652;</button></h2><div id="ivrs"></div></section>
+<section><h2>Conferences <button class="fold" type="button" data-a="fold" data-k="confs">&#9652;</button></h2><div id="confs"></div></section>
+<section><h2>Parking <button class="fold" type="button" data-a="fold" data-k="park">&#9652;</button></h2><div id="park"></div></section></div></main>
+<div id="toast" role="status"></div>
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LBL={NOTINUSE:'Idle',INUSE:'On call',BUSY:'Busy',RINGING:'Ringing',RINGINUSE:'Ringing',ONHOLD:'On hold',UNAVAILABLE:'Offline',INVALID:'Offline'};
+let fold={};try{fold=JSON.parse(localStorage.getItem('fold')||'{}')||{}}catch{}
+const NONE='<span class="t">Nothing in use</span>';
+const sysDark=typeof matchMedia==='function'?matchMedia('(prefers-color-scheme: dark)'):{matches:false};
+let theme=null;try{theme=localStorage.getItem('theme')}catch{}
+const eff=()=>theme||(sysDark.matches?'dark':'light');
+function themeUI(){const t=eff(),l=t==='dark'?'Switch to light mode':'Switch to dark mode',b=$('#theme');document.documentElement.dataset.theme=t;b.textContent=t==='dark'?'Light':'Dark';b.title=l;b.setAttribute('aria-label',l)}
+if(sysDark.addEventListener)sysDark.addEventListener('change',themeUI);
+function foldUI(){document.querySelectorAll('[data-a=fold]').forEach(b=>{const c=!!fold[b.dataset.k],t=c?'Show everything':'Show only items in use';b.textContent=c?'\u25BE':'\u25B4';b.setAttribute('aria-expanded',String(!c));b.title=t;b.setAttribute('aria-label',t)})}
+let ws,st={exts:[],calls:[],confs:[],lots:[],parked:[]},cred=null,off=0,tt;
+const send=o=>ws&&ws.readyState===1&&ws.send(JSON.stringify(o));
+const dur=s=>{s=Math.max(0,Math.floor((Date.now()+off-s)/1000));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+const T=s=>`<span class="t" data-s="${s}">${dur(s)}</span>`;
+const nm=(a,b)=>[...new Set([a,b].filter(Boolean))].join(' ');
+const who=l=>nm(l.num,l.name)||l.ch;
+function toast(t,ok){const e=$('#toast');e.textContent=t;e.style.display='block';e.style.background=ok===false?'var(--busy)':'';clearTimeout(tt);tt=setTimeout(()=>e.style.display='none',4500)}
+function connect(){
+ ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+location.pathname.replace(/[^/]*$/,'')+'ws');
+ ws.onopen=()=>{$('#conn').textContent='';if(cred)send({type:'login',...cred})};
+ ws.onmessage=e=>{const m=JSON.parse(e.data);
+  if(m.type==='state'){st=m;off=m.now-Date.now();render()}
+  else if(m.type==='auth'){if(m.ok){$('#login').hidden=true;$('#me').textContent='Operator '+m.ext;if(!$('#from').value)$('#from').value=m.ext}
+   else{cred=null;$('#login').hidden=false;$('#lerr').textContent=m.msg}}
+  else if(m.type==='result')toast(m.msg,m.ok)};
+ ws.onclose=()=>{$('#conn').textContent='Disconnected, retrying';setTimeout(connect,3000)}}
+$('#lf').onsubmit=e=>{e.preventDefault();cred={user:$('#u').value,pass:$('#p').value,ext:$('#x').value.trim()};$('#lerr').textContent='';send({type:'login',...cred})};
+function render(){
+ const legs=st.calls.flat(),q=$('#q').value.toLowerCase();
+ foldUI();$('#chint').hidden=!!fold.calls;$('#sc').hidden=!!fold.calls;
+ let ex=st.exts.filter(x=>(x.id+' '+x.name).toLowerCase().includes(q)).sort((a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true}));
+ if(fold.exts)ex=ex.filter(x=>!['NOTINUSE','UNAVAILABLE','INVALID'].includes(x.state)||legs.some(l=>l.ext===x.id));
+ $('#ecount').textContent=fold.exts?ex.length+' of '+st.exts.length:st.exts.length;
+ $('#exts').innerHTML=ex.map(x=>{const l=legs.find(l=>l.ext===x.id&&l.state==='Up')||legs.find(l=>l.ext===x.id);
+  return`<button class="ext s-${esc(x.state)}" data-a="pick" data-e="${esc(x.id)}"><b>${esc(x.id)} ${x.name&&x.name!==x.id?`<span>${esc(x.name)}</span>`:''}</b><small>${LBL[x.state]||esc(x.state)}${l?' with '+esc(l.cnum||l.cname||'?')+(l.state==='Up'?' '+T(l.since):''):''}</small></button>`}).join('')||(fold.exts?NONE:'');
+ $('#calls').innerHTML=st.calls.map(g=>{const two=g.length===2&&g.every(l=>l.br);
+  return`<div class="call">${g.map((l,i)=>`<div class="row"><span>${esc(who(l))} <small class="t">${esc(l.state)}</small></span>${T(l.since)}${two?`<button class="b" data-a="blind" data-c="${esc(g[1-i].ch)}">Blind</button><button class="b" data-a="att" data-c="${esc(g[1-i].ch)}">Attended</button>`:(!l.br&&l.state!=='Ringing'?`<button class="b" data-a="redir" data-c="${esc(l.ch)}">Send</button>`:'')}</div>`).join('')}<div class="row"><span></span><button class="b danger" data-a="end" data-c="${esc(JSON.stringify(g.map(l=>l.ch)))}">End call</button></div></div>`}).join('')||'<span class="t">No active calls</span>';
+ $('#ivrs').innerHTML=(st.ivrs||[]).filter(i=>!fold.ivrs||i.callers.length).map(i=>`<div class="room"><div class="row"><b>IVR ${esc(i.id)} ${esc(i.name)}</b><span class="t">${i.callers.length?i.callers.length+' in menu':'Idle'}</span></div>${i.callers.map(c=>`<div class="row"><span>${esc(nm(c.num,c.name)||c.ch)}</span>${T(c.since)}<button class="b" data-a="redir" data-c="${esc(c.ch)}">Send</button><button class="b danger" data-a="end" data-c="${esc(JSON.stringify([c.ch]))}">End call</button></div>`).join('')}</div>`).join('')||(fold.ivrs?NONE:'<span class="t">No callers in an IVR. Set IVR_NAMES on the server to list idle IVRs.</span>');
+ const gs=(w,a,b)=>w?'RINGING':a?'NOTINUSE':b?'INUSE':'UNAVAILABLE',bz=s=>/^(INUSE|BUSY|RINGING|RINGINUSE)$/.test(s);
+ const tile=g=>`<button class="ext s-${g.s}" data-a="pick" data-e="${esc(g.id)}" title="${esc(g.tip)}"><b>${esc(g.id)} ${g.name?`<span>${esc(g.name)}</span>`:''}</b><small>${esc(g.t)}</small></button>`;
+ $('#qtiles').innerHTML=(st.queues||[]).filter(q=>!fold.queues||q.callers.length||q.members.some(m=>bz(m.state))).map(q=>{const a=q.members.filter(m=>m.state==='NOTINUSE'&&!m.paused).length;return tile({id:q.id,name:q.name,s:gs(q.callers.length,a,q.members.some(m=>bz(m.state))),t:(q.callers.length?q.callers.length+' waiting, ':'')+(q.members.length?a+'/'+q.members.length+' available':'no members'),tip:q.members.map(m=>nm(m.ext,m.name)+' '+(LBL[m.state]||'')+(m.paused?' (paused)':'')).join(', ')})}).join('')||(fold.queues?NONE:'<span class="t">No queues</span>');
+ $('#rtiles').innerHTML=(st.rgs||[]).filter(g=>!fold.rgs||g.calling||g.members.some(id=>{const x=st.exts.find(e=>e.id===id);return x&&bz(x.state)})).map(g=>{const xs=g.members.map(id=>st.exts.find(e=>e.id===id)||{id,state:'UNAVAILABLE',name:''}),a=xs.filter(x=>x.state==='NOTINUSE').length;return tile({id:g.id,name:g.name,s:gs(g.calling,a,xs.some(x=>bz(x.state))),t:(g.calling?g.calling+' ringing, ':'')+a+'/'+xs.length+' available',tip:xs.map(x=>nm(x.id,x.name)+' '+(LBL[x.state]||'')).join(', ')})}).join('')||(fold.rgs?NONE:'<span class="t">No ring groups. Requires the database connection (DB_USER).</span>');
+ $('#sc').innerHTML=(st.shortcuts||[]).map(s=>`<button class="b" data-a="sc" data-e="${esc(s.code)}" title="${esc(s.code)}">${esc(s.label)}</button>`).join('');
+ $('#confs').innerHTML=st.confs.filter(r=>!fold.confs||r.members.length).map(r=>`<div class="room"><button class="roomhd" data-a="pick" data-e="${esc(r.id)}" title="Use ${esc(r.id)} as transfer destination"><b>${esc(r.id)} ${esc(r.name)}</b><span class="t">${r.members.length?r.members.length+' in room':'Empty'}${r.locked?', locked':''}</span></button>${r.members.map(m=>`<div class="row"><span>${esc(nm(m.num,m.name)||m.ch)}${m.admin?' (admin)':''}</span><button class="b" data-a="redir" data-c="${esc(m.ch)}">Send</button><button class="b" data-a="mute" data-r="${esc(r.id)}" data-c="${esc(m.ch)}" data-on="${m.muted?0:1}">${m.muted?'Unmute':'Mute'}</button><button class="b danger" data-a="kick" data-r="${esc(r.id)}" data-c="${esc(m.ch)}">Remove</button></div>`).join('')}</div>`).join('')||(fold.confs?NONE:'<span class="t">No active conferences. Set CONF_ROOMS on the server to list idle rooms.</span>');
+ $('#park').innerHTML=st.lots.filter(l=>!fold.park||st.parked.some(x=>x.lot===l.name)).map(l=>{const p=st.parked.filter(x=>x.lot===l.name);
+  return`<div class="lot"><div class="row"><b>${esc(l.name)} ${l.start}-${l.stop}</b><span class="t">${p.length}/${l.stop-l.start+1} used</span></div>${p.map(x=>`<div class="row"><span>${x.space} ${esc(nm(x.num,x.name)||x.ch)}</span>${T(x.since)}<button class="b" data-a="redir" data-c="${esc(x.ch)}">Send</button><button class="b danger" data-a="end" data-c="${esc(JSON.stringify([x.ch]))}">End call</button></div>`).join('')}</div>`}).join('')||(fold.park?NONE:'<span class="t">No parking lots reported</span>')}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const d=b.dataset,x=$('#xto').value.trim();
+ const need=()=>{if(x)return false;toast('Enter a Transfer to number',false);$('#xto').focus();return true};
+ switch(d.a){
+ case'pick':$('#to').value=d.e;$('#xto').value=d.e;break;
+ case'blind':if(!need())send({type:'blind',channel:d.c,to:x});break;
+ case'att':if(!need())send({type:'attended',channel:d.c,to:x});break;
+ case'end':if(confirm('End this call?'))send({type:'hangup',channels:JSON.parse(d.c)});break;
+ case'redir':if(!need())send({type:'redirect',channel:d.c,to:x});break;
+ case'theme':theme=eff()==='dark'?'light':'dark';try{localStorage.setItem('theme',theme)}catch{}themeUI();break;
+ case'fold':fold[d.k]=!fold[d.k];try{localStorage.setItem('fold',JSON.stringify(fold))}catch{}render();break;
+ case'sc':$('#xto').value=d.e;break;
+ case'kick':send({type:'kick',conf:d.r,channel:d.c});break;
+ case'mute':send({type:'mute',conf:d.r,channel:d.c,on:d.on==='1'});break}});
+$('#call').onclick=()=>send({type:'originate',from:$('#from').value.trim(),to:$('#to').value.trim()});
+$('#to').onkeydown=e=>{if(e.key==='Enter')$('#call').click()};
+$('#q').oninput=render;
+setInterval(()=>document.querySelectorAll('[data-s]').forEach(e=>e.textContent=dur(+e.dataset.s)),1000);
+{const p=new URLSearchParams(location.hash.slice(1));if(p.get('t')&&p.get('e')){cred={token:p.get('t'),ext:p.get('e')};$('#login').hidden=true;history.replaceState(null,'',location.pathname+location.search)}}
+{const bk=$('meta[name=back]').content;if(/^https?:\/\//.test(bk)){const a=$('#back');a.href=bk;a.hidden=false}}
+themeUI();connect();
+</script></body></html>

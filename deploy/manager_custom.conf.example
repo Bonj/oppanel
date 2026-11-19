@@ -1,0 +1,8 @@
+; Append to /etc/asterisk/manager_custom.conf (not manager.conf: FreePBX regenerates that file).
+; Then: asterisk -rx "manager reload"
+[oppanel]
+secret = CHANGE_ME_LONG_RANDOM
+deny = 0.0.0.0/0.0.0.0
+permit = 127.0.0.1/255.255.255.255
+read = system,call,agent
+write = system,call,originate,reporting

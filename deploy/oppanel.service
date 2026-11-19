@@ -1,0 +1,15 @@
+[Unit]
+Description=FreePBX operator panel
+After=asterisk.service
+
+[Service]
+User=oppanel
+EnvironmentFile=/etc/oppanel.env
+WorkingDirectory=/opt/oppanel
+ExecStart=/usr/bin/node server.js
+Restart=always
+NoNewPrivileges=true
+ProtectSystem=strict
+
+[Install]
+WantedBy=multi-user.target

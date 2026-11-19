@@ -1,0 +1,17 @@
+{
+  "name": "oppanel",
+  "version": "1.0.0",
+  "description": "Web operator panel for FreePBX 17 / Asterisk 20+ using the Asterisk Manager Interface",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ws": "^8.18.0",
+    "mysql2": "^3.11.0"
+  }
+}
