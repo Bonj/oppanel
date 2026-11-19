@@ -1,6 +1,9 @@
+
 # oppanel
 
 A web operator panel for FreePBX 17 / Asterisk 20+, built on the Asterisk Manager Interface (AMI). It shows extensions, queues, ring groups, IVRs, conferences and parking, and lets an operator originate, transfer and end calls.
+
+<img width="960" height="659" alt="Screenshot 2026-11-19 at 14-02-06 PBX operator panel" src="https://github.com/user-attachments/assets/205112af-0ded-4d09-bc17-316e7d2ef196" />
 
 A small Node.js bridge holds the AMI connection and serves a single HTML page over an authenticated WebSocket. AMI credentials never reach the browser.
 
