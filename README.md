@@ -124,4 +124,4 @@ Not supported: very old browsers. The page uses modern JavaScript and CSS, and a
 
 ## Licence
 
-None chosen yet. Add a `LICENSE` file before sharing the repository publicly.
+MIT Licence
